@@ -1,9 +1,9 @@
 // writes brand/X-KIT.md and checks every tweet is ≤245 characters.  node _studio/tweets.cjs
 'use strict';
 const fs = require('fs'), path = require('path'), len = (s) => [...s].length;
-const SITE = 'https://umbra.network', HANDLE = '@UmbraOnSolana';
+const SITE = 'https://umbrachainl1.net', HANDLE = '@UmbraOnSolana';
 const BIO = 'A private chain mined by proof of proof. Miners prove a Goldilocks-field trace, every note hides sender, receiver and amount, history anchored to Solana. $UMBRA';
-const DEX = 'UMBRA is a private blockchain mined by proof of proof, the Nockchain model: miners win blocks by proving a 1,024-step computation over the Goldilocks field, and every node checks the proof in milliseconds. 2^32 supply, no premine. Every transaction hides the sender (ring of 16), the receiver (stealth notes) and the amount (Pedersen commitments + range proofs), with ML-KEM-768 quantum-safe addresses. Every 100 blocks the chain writes its block hash to Solana. Prove blocks in your browser at umbra.network/mine.';
+const DEX = 'UMBRA is a private blockchain mined by proof of proof, the Nockchain model: miners win blocks by proving a 1,024-step computation over the Goldilocks field, and every node checks the proof in milliseconds. 2^32 supply, no premine. Every transaction hides the sender (ring of 16), the receiver (stealth notes) and the amount (Pedersen commitments + range proofs), with ML-KEM-768 quantum-safe addresses. Every 100 blocks the chain writes its block hash to Solana. Prove blocks in your browser at umbrachainl1.net/mine.';
 const T = [
 ['Pinned · intro', 'umbra-g01-keyart.png', `Hash grinding proves you burned power.
 UMBRA's miners prove they ran the program.

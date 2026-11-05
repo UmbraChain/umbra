@@ -4,7 +4,7 @@
 
 [![tests](https://github.com/UmbraChain/umbra/actions/workflows/test.yml/badge.svg)](https://github.com/UmbraChain/umbra/actions/workflows/test.yml)
 
-- Network, explorer, wallet, prover: https://umbra.network
+- Network, explorer, wallet, prover: https://umbrachainl1.net
 - X: [@UmbraOnSolana](https://x.com/UmbraOnSolana)
 - Token: $UMBRA on Solana
 

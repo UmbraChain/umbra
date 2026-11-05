@@ -17,12 +17,12 @@ A private chain mined by proof of proof. Miners prove a Goldilocks-field trace, 
 
 ## Website
 ```
-https://umbra.network
+https://umbrachainl1.net
 ```
 
 ## DexScreener description
 ```
-UMBRA is a private blockchain mined by proof of proof, the Nockchain model: miners win blocks by proving a 1,024-step computation over the Goldilocks field, and every node checks the proof in milliseconds. 2^32 supply, no premine. Every transaction hides the sender (ring of 16), the receiver (stealth notes) and the amount (Pedersen commitments + range proofs), with ML-KEM-768 quantum-safe addresses. Every 100 blocks the chain writes its block hash to Solana. Prove blocks in your browser at umbra.network/mine.
+UMBRA is a private blockchain mined by proof of proof, the Nockchain model: miners win blocks by proving a 1,024-step computation over the Goldilocks field, and every node checks the proof in milliseconds. 2^32 supply, no premine. Every transaction hides the sender (ring of 16), the receiver (stealth notes) and the amount (Pedersen commitments + range proofs), with ML-KEM-768 quantum-safe addresses. Every 100 blocks the chain writes its block hash to Solana. Prove blocks in your browser at umbrachainl1.net/mine.
 ```
 
 ## Profile images
@@ -31,7 +31,7 @@ UMBRA is a private blockchain mined by proof of proof, the Nockchain model: mine
 
 ## Tweets (all ≤245)
 
-### 1. Pinned · intro · 237 chars · media: `umbra-g01-keyart.png`
+### 1. Pinned · intro · 240 chars · media: `umbra-g01-keyart.png`
 ```
 Hash grinding proves you burned power.
 UMBRA's miners prove they ran the program.
@@ -39,7 +39,7 @@ UMBRA's miners prove they ran the program.
 Proof-of-proof blocks, Nockchain-style. Every note private. History anchored to Solana.
 
 Prove a block in your browser:
-https://umbra.network/mine
+https://umbrachainl1.net/mine
 
 $UMBRA
 ```
@@ -118,11 +118,11 @@ UMBRA: proof of proof + ring-16 private notes + ML-KEM receive + Solana anchors.
 $UMBRA
 ```
 
-### 8. Browser prover · 212 chars · media: `umbra-g01-keyart.png`
+### 8. Browser prover · 215 chars · media: `umbra-g01-keyart.png`
 ```
 No rig. No pool. No download.
 
-Open https://umbra.network/mine, paste your address, press start. Each thread runs the same program and proof the node runs, and blocks pay straight to your private address.
+Open https://umbrachainl1.net/mine, paste your address, press start. Each thread runs the same program and proof the node runs, and blocks pay straight to your private address.
 
 $UMBRA
 ```
@@ -160,7 +160,7 @@ UMBRA roadmap:
 $UMBRA
 ```
 
-### 12. Launch (fill CA) · 106 chars · media: `umbra-og.png`
+### 12. Launch (fill CA) · 109 chars · media: `umbra-og.png`
 ```
 $UMBRA is live on Solana.
 
@@ -168,5 +168,5 @@ The proof is the work. The note is dark.
 
 CA: <paste CA>
 
-https://umbra.network
+https://umbrachainl1.net
 ```
