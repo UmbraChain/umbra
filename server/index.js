@@ -10,7 +10,7 @@ import * as K from '../client/rct.js'; import * as PoP from '../client/pop.js'; 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'), CLIENT = path.join(ROOT, 'client');
 const PORT = +process.env.PORT || 8274, DATA = process.env.DATA_PATH || path.join(ROOT, 'data.json');
 const BLOCK_SEC = +process.env.BLOCK_SEC || 20, MIN_FEE = 10_000n, ANCHOR_EVERY = +process.env.ANCHOR_EVERY || 100;
-const UMBRA_MINT = process.env.UMBRA_MINT || '', NODE_PAUSE = +process.env.NODE_PAUSE || 0;   // $UMBRA on Solana; NODE_PAUSE = ms the node's own miner rests between attempts
+const UMBRA_MINT = process.env.UMBRA_MINT || 'Cz2YM1CaVm8FDbET2fZ33hLkhSrUyJJMtCgQxmbhpump', NODE_PAUSE = +process.env.NODE_PAUSE || 0;   // $UMBRA on Solana; NODE_PAUSE = ms the node's own miner rests between attempts
 const FAUCET = 25n * K.UNIT, MATURITY = 3, SUPPLY = 2n ** 32n * K.UNIT, TAIL = 2n * K.UNIT;
 const now = () => Date.now(), big = (x) => BigInt(x), fmt = (v) => (Number(v) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 6 });
 

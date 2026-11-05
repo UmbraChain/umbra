@@ -152,11 +152,11 @@ $UMBRA`],
 → UMBRA ⇄ Solana bridge
 
 $UMBRA`],
-['Launch (fill CA)', 'umbra-og.png', `$UMBRA is live on Solana.
+['Launch', 'umbra-og.png', `$UMBRA is live on Solana.
 
 The proof is the work. The note is dark.
 
-CA: <paste CA>
+CA: Cz2YM1CaVm8FDbET2fZ33hLkhSrUyJJMtCgQxmbhpump
 
 ${SITE}`],
 ];

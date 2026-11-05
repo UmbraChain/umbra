@@ -254,13 +254,13 @@ UMBRA roadmap:
 $UMBRA
 ```
 
-### 20. Launch (fill CA) · 109 chars · media: `umbra-og.png`
+### 20. Launch · 143 chars · media: `umbra-og.png`
 ```
 $UMBRA is live on Solana.
 
 The proof is the work. The note is dark.
 
-CA: <paste CA>
+CA: Cz2YM1CaVm8FDbET2fZ33hLkhSrUyJJMtCgQxmbhpump
 
 https://umbrachainl1.net
 ```
