@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UMBRA Whitepaper</title><meta name="description" content="UMBRA whitepaper: private money for the quantum era."><link rel="icon" href="/favicon.svg"><link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+<main class="wrap app prose">
+<div class="pagehead"><h1>UMBRA: proof of proof, private by default</h1><span class="cap">UMBRA whitepaper, version 1.0 (umbra-1), November 2026</span></div>
+<p style="margin-top:18px"><a href="https://github.com/UmbraChain/umbra/blob/main/WHITEPAPER.md">also on GitHub ↗</a></p>
+<h3>Abstract</h3>
+<p>UMBRA is a private chain mined by proof of proof: following Nockchain, miners win blocks by proving a Goldilocks-field computation, and the chain is anchored to Solana every 100 blocks. Every transaction is private by default. The sender hides in a ring of 16, the receiver behind a one-time stealth address, and the amount inside a Pedersen commitment with a range proof. Payments to quantum addresses (umbq1) are detected with ML-KEM-768, the NIST post-quantum key encapsulation standard. The Totality upgrade moves spends to hash-based proofs over the whole chain, so the last elliptic-curve dependency goes too. The is live, and every rule in this paper is in the public repository and covered by its test suite.</p>
+<h3>1. The problem</h3>
+<p>Public chains publish who paid whom and how much, forever. Anyone can follow a wallet, cluster its addresses and read its history. Privacy coins solved part of this with elliptic-curve cryptography, but a large enough quantum computer breaks elliptic curves. Data recorded today can be unmasked later. UMBRA is built so that what is private today stays private after quantum.</p>
+<h3>2. Design goals</h3>
+<ul><li>Private by default. No transparent mode, no opt-in.</li><li>Hide all three: sender, receiver and amount.</li><li>Post-quantum where it matters first: payment detection, which is what links payments to a person.</li><li>A clear path to fully post-quantum spends without a new coin.</li><li>Anyone can verify every transaction without trusting a node.</li></ul>
+<h3>3. Keys and addresses</h3>
+<p>A wallet is one 32-byte seed. From it the wallet derives a spend key and a view key (scalars on ristretto255) and an ML-KEM-768 key pair. Each wallet has two addresses:</p>
+<pre>umb1...   classic: spend public key + view public key
+umbq1...  quantum: the same keys + an ML-KEM-768 public key</pre>
+<p>Both receive into the same wallet. Keys are created in the browser and never leave the device.</p>
+<h3>4. Stealth outputs</h3>
+<p>Nobody pays an address directly. For each payment the sender derives a fresh one-time key:</p>
+<pre>P = Hs(shared_secret, i)*G + A</pre>
+<p>On <code>umb1</code> addresses the shared secret comes from ECDH with the receiver's view key. On <code>umbq1</code> addresses it comes from ML-KEM-768 encapsulation, and the 1,088-byte ciphertext travels with the output. The receiver scans each output with the view key or the ML-KEM secret key. To everyone else, two payments to the same wallet look unrelated.</p>
+<h3>5. Hidden amounts</h3>
+<p>Each amount is a Pedersen commitment:</p>
+<pre>C = x*G + v*H</pre>
+<p>The blinding factor x and the amount v are encrypted to the receiver. Every output carries a 48-bit range proof: 48 bit commitments, each with a 2-member ring signature proving it opens to 0 or to 2^j. This blocks inflation through negative amounts. A transaction balances when:</p>
+<pre>sum(pseudo-input commitments) = sum(output commitments) + fee*H</pre>
+<h3>6. Ring signatures and key images</h3>
+<p>Each input references 16 outputs from the chain: the real one and 15 decoys. A two-row MLSAG signature proves the signer owns one of the 16 one-time keys and that its commitment matches the pseudo-input, without revealing which. The signature publishes a key image:</p>
+<pre>I = x*Hp(P)</pre>
+<p>One output always gives the same key image, so a second spend is rejected, but nothing links the key image back to the output.</p>
+<h3>7. Consensus: proof of proof</h3>
+<ul><li>Following Nockchain, a block is won by proving a fixed program, not by grinding a hash.</li><li>Seed: two Goldilocks elements (p = 2^64 − 2^32 + 1) from sha256(header | nonce).</li><li>Program: 1,023 rounds of a' = (a+b)^7 + c_i, b' = a. x^7 is a permutation of the field, so no round can be shortcut.</li><li>Commitment: a Merkle tree over all 1,024 states. Valid when sha256(pow | root | header | nonce) * difficulty &lt; 2^256.</li><li>Proof: the first and last states plus 32 Fiat–Shamir-chosen steps, each opened with its successor and Merkle paths. Nodes check it in milliseconds. Faking a fraction f of the trace survives with probability (1 − f)^32.</li><li>Difficulty retargets every block toward a 20-second block time. Coinbase outputs mature after 3 confirmations.</li></ul>
+<h3>8. Emission</h3>
+<ul><li>Supply: 2^32 = 4,294,967,296 UMBRA, the same power of two as Nockchain. No premine, no presale, no team allocation.</li><li>Block reward: (2^32 − mined) / 2^19, a smooth curve that falls each block.</li><li>Tail emission: 2 UMBRA per block, forever, so provers are always paid.</li></ul>
+<h3>8b. Solana anchoring</h3>
+<p>Every 100 blocks the node writes umbra-1:&lt;height&gt;:&lt;hash&gt; to Solana with the Memo program. Solana's record can't be edited, so any rewrite of UMBRA's history is checkable against it.</p>
+<h3>9. Verification without trust</h3>
+<p>Every transaction in the explorer has a "verify in your browser" button. The browser fetches the transaction and its ring members from <code>/api/rawtx/:id</code> and runs the same <code>verifyTx</code> the node runs: every ring signature, every range proof and the commitment balance. The code is open source, and the test suite runs on every push via GitHub Actions. It covers private sends to <code>umbq1</code> addresses, rejection of double spends and rejection of forged signatures.</p>
+<p>Cryptography comes from the audited noble libraries: @noble/curves (ristretto255), @noble/hashes (SHA-512, SHA3-256) and @noble/post-quantum (ML-KEM-768). The proof-of-proof program uses @noble/hashes SHA-256 and native BigInt field arithmetic.</p>
+<h3>10. Totality: the quantum upgrade</h3>
+<p>ML-KEM payment detection is live today. Totality finishes the job:</p>
+<ol><li>Spends move from elliptic-curve ring signatures to hash-based proofs.</li><li>The anonymity set grows from 16 outputs to the whole chain.</li><li>Payment detection becomes ML-KEM-768 only.</li></ol>
+<p>It is the same chain with no new coin. Each wallet migrates its coins once, automatically.</p>
+<h3>11. $UMBRA</h3>
+<p>$UMBRA is the network's token on Solana, the chain UMBRA anchors to. Holders and provers meet in one place: the token on Solana, and the coins proved on umbra-1.</p>
+<h3>12. Roadmap</h3>
+<ul><li>Done: umbra-1 live with proof-of-proof blocks, explorer, browser wallet and faucet</li><li>Done: browser prover at /mine and CLI prover in miner/</li><li>Done: Solana anchors every 100 blocks</li><li>Next: full STARK per block (low-degree test over the whole trace), then proof aggregation per anchor window</li><li>Then: Totality, hash-based spends and full-chain privacy; a UMBRA ⇄ Solana bridge</li></ul>
+<h3>Links</h3>
+<ul><li>Testnet, explorer and wallet: <a href="https://umbra.network">https://umbra.network</a></li><li>Docs: <a href="https://umbra.network/docs">https://umbra.network/docs</a></li><li>Code: <a href="https://github.com/UmbraChain/umbra">https://github.com/UmbraChain/umbra</a></li><li>X: <a href="https://x.com/UMBRAChainL1">https://x.com/UMBRAChainL1</a></li></ul>
+</main>
+<script type="module">import { chrome } from '/common.js'; chrome();</script></body></html>
