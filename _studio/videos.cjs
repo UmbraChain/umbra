@@ -36,6 +36,11 @@ async function render(c, name, html, dur) { const FR = path.join(os.tmpdir(), 'u
 const L = (id, x, y, inner, w) => `<div class="s" id="${id}" style="left:${x}px;top:${y}px;${w ? 'width:' + w + 'px' : ''}">${inner}</div>`;
 const V = {
   // 18s: the trace runs, the umbra slides in, four beats, end card
+  // 10s: the "firsts" stack up one by one
+  'umbra-first-10s': [10, () => page(
+    L('t', 110, 150, `<div class="cap">a first, on chain</div><div class="h" style="font-size:92px;margin-top:22px">The first private chain<br>mined by <b>proof</b>.</div>`) +
+    ['proof-of-proof blocks', 'every note private', 'quantum-safe receive', 'pinned to Solana', 'verifiable in your browser'].map((x, i) => L('f' + i, 110, 520 + i * 72, `<span class="v">✓</span>&nbsp;&nbsp;${x}`)).join(''),
+    `lattice({cell:20,x:1240,y:330,head:300+t*80,open:t>6?Math.min(1,(t-6)/1):0,um:{x:1560,y:640,r:110},alpha:.9});show('t',t,.2,99);for(let i=0;i<5;i++)show('f'+i,t,1.6+i*.8,99);$('ft').style.opacity=cl((t-6.5)/.5)`)],
   'umbra-hype-18s': [18, () => page(
     L('a', 110, 380, `<div class="cap">hash grinding proves</div><div class="h" style="margin-top:26px;font-size:96px">you burned<br>power.</div>`) +
     L('b', 110, 380, `<div class="cap">umbra's miners prove</div><div class="h" style="margin-top:26px;font-size:96px">they ran the<br><b>program.</b></div>`) +
