@@ -53,7 +53,7 @@ section{position:relative;padding:clamp(80px,10vw,140px) 0}
     <div class="ca" id="ca"></div></div>
   <div class="tick frame"><div class="hd"><span><span class="live"></span>umbra-1 live</span><span id="tH">height –</span></div>
     <div class="l"><span>latest block</span><b id="tB">–</b></div><div class="l"><span>trace root</span><b id="tR">–</b></div><div class="l"><span>proof</span><b id="tP">–</b></div>
-    <div class="l"><span>difficulty</span><b id="tD">–</b></div><div class="l"><span>private transactions</span><b id="tT">–</b></div><div class="l"><span>mined so far</span><b id="tE">–</b></div><div class="l"><span>last solana anchor</span><b id="tA">–</b></div></div>
+    <div class="l"><span>difficulty</span><b id="tD">–</b></div><div class="l"><span>private transactions</span><b id="tT">–</b></div><div class="l"><span>mined so far</span><b id="tE">–</b></div><div class="l"><span>last solana anchor</span><b id="tA">–</b></div><div class="l"><span>watchtowers</span><b id="tW">–</b></div></div>
 </div></section>
 
 <section id="proof"><div class="wrap">
@@ -130,7 +130,7 @@ section{position:relative;padding:clamp(80px,10vw,140px) 0}
   <h2 class="disp reveal">From proofs of work<br>to proofs of <b>everything</b>.</h2>
   <div class="road reveal">
     <div class="frame"><div class="ph">phase i · live</div><ul><li class="d">umbra-1 with proof-of-proof blocks</li><li class="d">private notes: ring 16, stealth, Pedersen</li><li class="d">ML-KEM-768 quantum addresses</li><li class="d">browser + CLI provers</li></ul></div>
-    <div class="frame"><div class="ph">phase ii · live</div><ul><li class="d">Solana anchors via Memo</li><li class="d">explorer re-verifies proofs and txs in your browser</li><li class="d">genesis prover leaderboard</li><li class="d">light client at /verify: genesis → tip + Solana, in your browser</li><li>$UMBRA on Solana</li></ul></div>
+    <div class="frame"><div class="ph">phase ii · live</div><ul><li class="d">Solana anchors via Memo</li><li class="d">explorer re-verifies proofs and txs in your browser</li><li class="d">genesis prover leaderboard</li><li class="d">light client at /verify: genesis → tip + Solana, in your browser</li><li class="d">watchtowers: signed attestations from independent verifiers</li><li>$UMBRA on Solana</li></ul></div>
     <div class="frame"><div class="ph">phase iii</div><ul><li>full STARK per block: low-degree test over the whole trace</li><li>proof aggregation: one proof per anchor window</li><li>peer-to-peer nodes</li></ul></div>
     <div class="frame"><div class="ph">phase iv</div><ul><li>UMBRA ⇄ Solana bridge: notes in, SPL out</li><li>useful puzzles: proving other programs as the block work</li><li>light clients that only check anchors and proofs</li></ul></div>
   </div>
@@ -176,7 +176,7 @@ async function tickr() { try { const s = await api('/api/stats'), [b] = await ap
   $('tH').textContent = 'height ' + s.height.toLocaleString(); $('tB').textContent = short(b.hash, 10) + ' · ' + ago(b.ts); $('tR').textContent = short(b.traceRoot, 10); $('tP').textContent = b.proofBytes ? (b.proofBytes / 1024).toFixed(1) + ' KB · 32 openings' : 'pruned';
   $('tD').textContent = s.diff.toLocaleString(); $('tT').textContent = s.privateTxs.toLocaleString(); $('tE').textContent = umb(s.emitted) + ' UMBRA';
   $('tA').textContent = s.anchor.last ? 'block ' + s.anchor.last.height + ' · ' + short(s.anchor.last.sig, 6) : s.anchor.enabled ? 'first anchor at block ' + Math.ceil((s.height + 1) / s.anchor.every) * s.anchor.every : 'every ' + s.anchor.every + ' blocks';
-  caBar($('ca'), s.mint); chain(s); curve(s); } catch {} }
+  $('tW').innerHTML = (s.watchtowers || 0).toLocaleString() + ' · <a href="/verify" style="color:var(--hi)">become one</a>'; caBar($('ca'), s.mint); chain(s); curve(s); } catch {} }
 function chain(s) { const n = 60, from = Math.max(0, s.height - n + 1), ev = s.anchor.every; $('chain').innerHTML = Array.from({ length: Math.min(n, s.height + 1) }, (_, k) => `<i class="${(from + k) % ev === 0 ? 'a' : ''}" title="block ${from + k}"></i>`).join('');
   $('anc').innerHTML = s.anchor.count ? `${s.anchor.count} anchors written · last: block ${s.anchor.last.height} · <a style="color:var(--hi)" target="_blank" rel="noopener" href="https://solscan.io/tx/${s.anchor.last.sig}">solscan ↗</a>` : `one anchor every ${ev} blocks · next at block ${Math.ceil((s.height + 1) / ev) * ev}`; }
 function curve(s) { const c = $('curve'), g = c.getContext('2d'), w = c.clientWidth, h = c.clientHeight, d = Math.min(2, devicePixelRatio || 1); c.width = w * d; c.height = h * d; g.setTransform(d, 0, 0, d, 0, 0);

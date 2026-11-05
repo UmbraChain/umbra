@@ -5,7 +5,7 @@
 //   range proofs, and ML-KEM-768 payment detection for quantum ("umbq1") addresses.
 // One process serves the chain API, the explorer, the browser wallet and the site.
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import crypto from 'node:crypto'; import { fileURLToPath } from 'node:url';
-import * as K from '../client/rct.js'; import * as PoP from '../client/pop.js'; import { Worker } from 'node:worker_threads'; import { anchorer } from './solana.js';
+import * as K from '../client/rct.js'; import * as PoP from '../client/pop.js'; import { Worker } from 'node:worker_threads'; import { anchorer } from './solana.js'; import * as Light from '../client/light.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'), CLIENT = path.join(ROOT, 'client');
 const PORT = +process.env.PORT || 8274, DATA = process.env.DATA_PATH || path.join(ROOT, 'data.json');
@@ -122,7 +122,7 @@ function stats() { const n = S.blocks.length, last = S.blocks.slice(-20), span =
   const priv = Object.values(S.txs).filter((t) => !t.coinbase), q = priv.reduce((a, t) => a + t.vout.filter((o) => o.ct).length, 0);
   return { name: 'UMBRA', ticker: 'UMBRA', network: 'umbra-1', height: n - 1, outputs: S.outs.length, keyImages: Object.keys(S.kis).length, privateTxs: priv.length, quantumOutputs: q, mempool: mempool.length,
     emitted: S.emitted, supply: String(SUPPLY), reward: String(reward()), diff: tip() ? tip().diff : 0, blockTime: +span.toFixed(1), targetTime: BLOCK_SEC, hashrate: tip() ? +(tip().diff / span).toFixed(2) : 0,
-    ring: K.RING, bits: K.BITS, pow: `proof of proof · ${PoP.STEPS}-step Goldilocks trace · ${PoP.Q} openings`, mint: UMBRA_MINT || null, anchor: anchor.info(), faucet: String(FAUCET), publicBlocks: S.pub || 0 }; }
+    ring: K.RING, bits: K.BITS, watchtowers: Object.keys(S.watch || {}).length, pow: `proof of proof · ${PoP.STEPS}-step Goldilocks trace · ${PoP.Q} openings`, mint: UMBRA_MINT || null, anchor: anchor.info(), faucet: String(FAUCET), publicBlocks: S.pub || 0 }; }
 function search(q) { q = String(q || '').trim(); if (/^\d+$/.test(q) && S.blocks[+q]) return { type: 'block', id: q };
   if (/^[0-9a-f]{64}$/.test(q)) { if (S.txs[q]) return { type: 'tx', id: q }; const b = S.blocks.find((x) => x.hash === q); if (b) return { type: 'block', id: String(b.height) }; if (S.kis[q]) return { type: 'tx', id: S.kis[q] }; }
   return null; }
@@ -164,6 +164,18 @@ http.createServer(async (req, res) => {
     if (p.startsWith('/api/proof/')) { const b = S.blocks[+p.slice(11)]; if (!b) return json(res, 404, { error: 'no such block' }); return json(res, 200, { height: b.height, hdr: header(b), diff: b.diff, proof: b.proof || null }); }
     if (p === '/api/anchors') return json(res, 200, { ...anchor.info(), list: Object.entries(S.anchors || {}).map(([h, a]) => ({ height: +h, ...a })).reverse().slice(0, u.searchParams.has('all') ? 1e6 : 50) });
     // light-client sync: the raw header fields of every block, so a client can rebuild each hash and the prev-hash chain itself
+    // watchtowers: independent verifiers post signed attestations of the tip they checked
+    if (p === '/api/attest' && req.method === 'POST') { const a = await body(req), b = S.blocks[a.height];
+      if (!a || !/^[0-9a-f]{64}$/.test(a.pub || '') || !/^[0-9a-f]{128}$/.test(a.sig || '') || !Number.isSafeInteger(a.height) || !['browser', 'node'].includes(a.kind)) return json(res, 200, { error: 'malformed attestation' });
+      if (Math.abs(now() - a.ts) > 10 * 60_000) return json(res, 200, { error: 'stale attestation' });
+      if (!b || b.hash !== a.hash) return json(res, 200, { error: 'that hash is not block ' + a.height + ' on this chain' });
+      if (!Light.checkAttest(a)) return json(res, 200, { error: 'bad signature' });
+      const W = (S.watch ||= {}), prev = W[a.pub]; if (prev && now() - prev.ts < 60_000) return json(res, 200, { error: 'one attestation per minute per key' });
+      W[a.pub] = { height: a.height, hash: a.hash, proofs: Math.min(500, +a.proofs || 0), anchors: Math.min(1e5, +a.anchors || 0), kind: a.kind, ts: now(), first: prev ? prev.first : now(), n: (prev ? prev.n : 0) + 1 };
+      const keys = Object.keys(W); if (keys.length > 20000) { keys.sort((x, y) => W[x].ts - W[y].ts).slice(0, 1000).forEach((k) => delete W[k]); } save();
+      return json(res, 200, { ok: true, rank: Object.keys(W).length }); }
+    if (p === '/api/attest') { const W = S.watch || {}, rows = Object.entries(W).map(([pub, w]) => ({ id: pub.slice(0, 12), ...w })).sort((x, y) => y.ts - x.ts), day = now() - 86_400_000;
+      return json(res, 200, { watchtowers: rows.length, last24h: rows.filter((r) => r.ts > day).length, nodes: rows.filter((r) => r.kind === 'node').length, attestations: rows.reduce((s, r) => s + r.n, 0), highest: rows.reduce((m, r) => Math.max(m, r.height), -1), recent: rows.slice(0, 40) }); }
     if (p === '/api/headers') { const from = Math.max(0, +u.searchParams.get('from') || 0), lim = Math.min(2000, +u.searchParams.get('limit') || 1000);
       return json(res, 200, { height: height(), headers: S.blocks.slice(from, from + lim).map((b) => [b.height, b.prev, b.ts, b.diff, b.root, b.minerTx, b.traceRoot || null, b.nonce, b.hash, !!b.proof]) }); }
     if (p === '/api/leaderboard') { const b = board(), a = u.searchParams.get('address'); if (a) { try { K.parseAddress(a); const id = minerId(a), all = Object.entries(S.board || {}).sort((x, y) => y[1].blocks - x[1].blocks || x[1].first - y[1].first), k = all.findIndex(([i]) => i === id); b.you = { id, rank: k >= 0 ? k + 1 : null, ...(S.board?.[id] || { blocks: 0 }) }; } catch {} } return json(res, 200, b); }

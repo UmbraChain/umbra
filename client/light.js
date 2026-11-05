@@ -44,3 +44,14 @@ export async function solanaTx(rpc, sig) {
   const r = await fetch(rpc, { signal: ctl.signal, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: [sig, { encoding: 'json', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }] }) });
   clearTimeout(to); const j = await r.json(); if (j.error) throw new Error(j.error.message); return j.result;
 }
+
+// ---------- watchtower attestations ----------
+// After a full check, a verifier signs "I verified umbra-1 up to <height>, whose hash is <hash>" with its own ed25519 key.
+// The node only stores an attestation whose hash matches its own block at that height, so the board counts real agreement.
+import { ed25519 } from '@noble/curves/ed25519';
+import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+export const attestMsg = (a) => `umbra-1/attest|${a.height}|${a.hash}|${a.proofs}|${a.anchors}|${a.kind}|${a.ts}`;
+export const newKey = () => bytesToHex(ed25519.utils.randomPrivateKey());
+export const pubOf = (sk) => bytesToHex(ed25519.getPublicKey(hexToBytes(sk)));
+export function attest(sk, a) { const b = { ...a, ts: a.ts || Date.now(), pub: pubOf(sk) }; return { ...b, sig: bytesToHex(ed25519.sign(utf8ToBytes(attestMsg(b)), hexToBytes(sk))) }; }
+export function checkAttest(a) { try { return ed25519.verify(hexToBytes(a.sig), utf8ToBytes(attestMsg(a)), hexToBytes(a.pub)); } catch { return false; } }

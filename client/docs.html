@@ -33,6 +33,9 @@ umbq1…  quantum: the same keys + an ML-KEM-768 public key (about 1,700 charact
 <h3 id="light-client">Light client: verify the chain yourself</h3>
 <p>Open <a class="ac" href="/verify">/verify</a> and press <b>verify the chain</b>. Your browser downloads the raw block headers and rebuilds every block hash from block 0, checking that each block points at the one before it. It re-runs the proof of proof on recent blocks against the headers it rebuilt, then reads every anchor memo straight from a Solana RPC and checks that Solana recorded the same hash. The node only supplies data; every check runs on your device. Code: <code>client/light.js</code>.</p>
 
+<h3 id="watchtowers">Watchtowers</h3>
+<p>A watchtower is anyone who has verified the chain and signed for it. After a full check, <a class="ac" href="/verify">/verify</a> signs <code>umbra-1/attest|height|hash|proofs|anchors|kind|time</code> with an ed25519 key kept in your browser and posts it to <code>POST /api/attest</code>. The node refuses an attestation whose hash is not its own block at that height, so every entry on the board is an independent party agreeing on the same chain. To run one on a server: <code>node verifier/watch.js</code>. It re-checks new headers, recent proofs and new Solana anchors every minute and attests the tip. If anything ever fails to match, it prints <b>VERIFICATION FAILED</b> and stops attesting.</p>
+
 <h3 id="solana-anchors">Solana anchors</h3>
 <p>Every 100 blocks the node writes <code>umbra-1:&lt;height&gt;:&lt;block hash&gt;</code> to Solana with the Memo program, signed by the anchor key. The explorer links each anchored block to its Solscan transaction, and <code>/api/anchors</code> lists them all.</p>
 
@@ -45,6 +48,8 @@ POST /api/work   {id, proof}         submit a proof (re-checked by the node)
 GET  /api/proof/:height             header, difficulty and proof of a recent block
 GET  /api/anchors?all               Solana anchors (height, hash, signature)
 GET  /api/headers?from=N&limit=1000 raw header fields for light clients
+POST /api/attest  {height,hash,proofs,anchors,kind,ts,pub,sig}  watchtower attestation
+GET  /api/attest                    watchtower board
 GET  /api/stats                     chain height, difficulty, outputs, key images, emission
 GET  /api/blocks?limit=15&before=N  recent blocks
 GET  /api/block/:height|:hash       one block with its transactions

@@ -29,6 +29,9 @@
     <div class="st frame" id="s3"><span class="n">03 · solana</span><h4>Match every Solana anchor</h4><p>Each anchor's memo is read from a Solana RPC (not from this node) and its hash must equal the one your browser rebuilt for that height.</p><div class="bar"><i id="b3"></i></div><div class="big" id="v3">–</div></div>
   </div>
   <div class="frame" id="verdict"><span class="dot"></span><div><span id="vt"></span><small id="vs"></small></div></div>
+  <div class="panel" style="margin-top:18px" id="wt"><div class="hd"><span>watchtowers · independent verifiers</span><span id="wts">–</span></div>
+    <div class="stats" style="border:0;border-bottom:1px solid var(--line)"><div><span>watchtowers</span><b id="w1">–</b></div><div><span>active 24h</span><b id="w2">–</b></div><div><span>attestations</span><b id="w3">–</b></div><div><span>server watchtowers</span><b id="w4">–</b></div></div>
+    <div class="log" id="wl" style="max-height:260px"></div><p class="dim" style="font-size:12px;padding:12px 18px">After a full check, your browser signs "I verified umbra-1 up to block N, hash H" with its own ed25519 key and posts it. The node only accepts it if that hash is really its block N. Run one on a server: <code>node verifier/watch.js</code>.</p></div>
   <div class="panel" style="margin-top:18px"><div class="hd"><span>log</span><span id="lt">idle</span></div><div class="log" id="log"><div><span class="dim">ready</span><span class="dim">press verify the chain</span><span></span></div></div></div>
   <p class="note">Code: <code>client/light.js</code>, <code>client/pop.js</code>, <code>client/rct.js</code> on <a class="ac" href="https://github.com/UmbraChain/umbra" target="_blank" rel="noopener">GitHub</a>. The page uses only <code>/api/headers</code>, <code>/api/proof/:height</code> and <code>/api/anchors?all</code> from the node; everything is checked locally.</p>
 </main>
@@ -38,6 +41,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), fmt = (n) => n.toLo
 const log = (h, msg, right, cls) => { const l = $('log'); if (l.dataset.fresh !== '1') { l.innerHTML = ''; l.dataset.fresh = '1'; } const d = document.createElement('div'); d.innerHTML = `<span class="${cls || 'dim'}">${h}</span><span>${msg}</span><span class="dim">${right || ''}</span>`; l.prepend(d); while (l.children.length > 200) l.lastChild.remove(); };
 const stage = (k, cls, big) => { $('s' + k).className = 'st frame ' + (cls || ''); if (big != null) $('v' + k).innerHTML = big; };
 const fail = (k, why) => { stage(k, 'bad'); $('verdict').className = 'frame show bad'; $('vt').textContent = 'Verification failed'; $('vs').textContent = why; $('go').disabled = false; $('lt').textContent = 'stopped'; };
+let SK; try { SK = localStorage.getItem('umb_watch'); if (!SK) { SK = L.newKey(); localStorage.setItem('umb_watch', SK); } } catch { SK = L.newKey(); }
+async function publish(height, hash, proofs, anchors) { const a = L.attest(SK, { height, hash, proofs, anchors, kind: 'browser' }), r = await api('/api/attest', a);
+  if (r.ok) { log('you', 'signed attestation accepted · you are a watchtower', short(a.pub, 6), 'ok'); $('vt').textContent += ' You are now watchtower ' + short(a.pub, 6) + '.'; } else log('you', 'attestation: ' + r.error, '', 'dim'); board(); }
+async function board() { const b = await api('/api/attest'); $('w1').textContent = fmt(b.watchtowers); $('w2').textContent = fmt(b.last24h); $('w3').textContent = fmt(b.attestations); $('w4').textContent = fmt(b.nodes); $('wts').textContent = b.highest >= 0 ? 'highest attested block ' + fmt(b.highest) : 'be the first';
+  let mine = ''; try { mine = L.pubOf(SK).slice(0, 12); } catch {}
+  $('wl').innerHTML = b.recent.map((w) => `<div><span class="${w.id === mine ? 'ok' : 'dim'}">${w.id === mine ? 'you' : w.kind}</span><span>${w.id}… verified to block ${fmt(w.height)} · ${w.proofs} proofs · ${w.anchors} anchors</span><span class="dim">${new Date(w.ts).toISOString().slice(11, 19)} UTC</span></div>`).join('') || '<div><span class="dim">–</span><span class="dim">no attestations yet</span><span></span></div>'; }
+board(); setInterval(board, 20000);
 $('go').onclick = async () => {
   $('go').disabled = true; $('verdict').className = 'frame'; [1, 2, 3].forEach((k) => { stage(k, '', '–'); $('b' + k).style.width = '0'; }); $('log').dataset.fresh = '0'; $('lt').textContent = 'running';
   const t0 = performance.now();
@@ -64,6 +74,7 @@ $('go').onclick = async () => {
     log('#' + a.height, 'Solana memo matches your rebuilt hash', `<a href="https://solscan.io/tx/${a.sig}" target="_blank" rel="noopener">${short(a.sig, 6)} ↗</a>`, 'ok'); await sleep(250); }
   if (A.length) stage(3, 'done', fmt(m) + ' <small>/ ' + A.length + ' anchors match</small>');
   $('verdict').className = 'frame show'; $('vt').textContent = 'Verified: UMBRA checks out from genesis to block ' + fmt(tip) + '.';
+  publish(tip, hashes.get(tip), n, m);
   $('vs').textContent = `${fmt(next)} headers rebuilt · ${n} proofs re-run · ${m} Solana anchors matched · ${((performance.now() - t0) / 1000).toFixed(1)}s, all on this device`; $('lt').textContent = 'done'; $('go').disabled = false;
 };
 </script></body></html>

@@ -23,6 +23,7 @@ One Node.js process is the node, the explorer, the browser wallet and the browse
 | Quantum receive | `umbq1` addresses carry an ML-KEM-768 key; the 1,088-byte ciphertext rides with the output | `makeOutput`, `scan` |
 | Solana anchors | Every 100 blocks: Memo tx `umbra-1:<height>:<hash>` signed by `SOLANA_KEY` | `server/solana.js` |
 | Light client | `/verify` rebuilds every block hash from genesis, re-runs recent proofs, and matches every anchor read from a Solana RPC, all in the browser | `client/light.js`, `client/verify.html` |
+| Watchtowers | After a full check, verifiers sign the tip they checked (ed25519) and post it; the node only accepts a hash that matches its own block. `node verifier/watch.js` runs one on any server | `client/light.js`, `verifier/watch.js` |
 | Verify yourself | Explorer re-runs block proofs (`/api/proof/:h`) and transaction proofs (`/api/rawtx/:id`) in your browser | `client/explorer.html` |
 | Open proving | `GET /api/work?address=` → template; `POST /api/work {id, proof}` → node re-verifies, pays the coinbase to you | `client/mine.html`, `miner/miner.js` |
 
@@ -33,6 +34,7 @@ npm i
 npm start                  # http://localhost:8274
 npm test                   # crypto unit tests
 npm run test:e2e           # boots a node: proves blocks, faucet, private send, public prover wins a block
+node verifier/watch.js --node http://localhost:8274   # a watchtower
 node miner/miner.js <umb1 address> --node http://localhost:8274 --threads 4
 ```
 
