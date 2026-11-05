@@ -104,7 +104,7 @@ section{position:relative;padding:clamp(80px,10vw,140px) 0}
   <div class="anchor">
     <div class="reveal"><p class="lead" style="margin-top:0">Every 100 blocks the node writes <code style="font:400 13px var(--mono);color:var(--hi2)">umbra-1:&lt;height&gt;:&lt;block hash&gt;</code> to Solana with the Memo program. Each anchor is a Solana transaction anyone can open on Solscan and compare with the same block on the UMBRA explorer.</p>
       <p class="lead">A rewrite of UMBRA's history would have to contradict a record on Solana that nobody can edit. <b>$UMBRA</b> is the Solana token for the network; the anchors tie the token's home chain to the chain it represents.</p>
-      <div class="row" style="margin-top:24px"><a class="btn" href="/explorer#/anchors">see anchors</a></div></div>
+      <div class="row" style="margin-top:24px"><a class="btn solid" href="/verify">verify it in your browser</a><a class="btn" href="/explorer#/anchors">see anchors</a></div></div>
     <div class="frame reveal" style="padding:22px"><div class="cap" style="margin-bottom:14px">umbra blocks · <span style="color:var(--hi)">■</span> anchored to solana</div><div class="chain" id="chain"></div><div class="cap" id="anc" style="margin-top:16px;line-height:1.7"></div></div>
   </div>
 </div></section>
@@ -130,7 +130,7 @@ section{position:relative;padding:clamp(80px,10vw,140px) 0}
   <h2 class="disp reveal">From proofs of work<br>to proofs of <b>everything</b>.</h2>
   <div class="road reveal">
     <div class="frame"><div class="ph">phase i · live</div><ul><li class="d">umbra-1 with proof-of-proof blocks</li><li class="d">private notes: ring 16, stealth, Pedersen</li><li class="d">ML-KEM-768 quantum addresses</li><li class="d">browser + CLI provers</li></ul></div>
-    <div class="frame"><div class="ph">phase ii · live</div><ul><li class="d">Solana anchors via Memo</li><li class="d">explorer re-verifies proofs and txs in your browser</li><li class="d">genesis prover leaderboard</li><li>$UMBRA on Solana</li></ul></div>
+    <div class="frame"><div class="ph">phase ii · live</div><ul><li class="d">Solana anchors via Memo</li><li class="d">explorer re-verifies proofs and txs in your browser</li><li class="d">genesis prover leaderboard</li><li class="d">light client at /verify: genesis → tip + Solana, in your browser</li><li>$UMBRA on Solana</li></ul></div>
     <div class="frame"><div class="ph">phase iii</div><ul><li>full STARK per block: low-degree test over the whole trace</li><li>proof aggregation: one proof per anchor window</li><li>peer-to-peer nodes</li></ul></div>
     <div class="frame"><div class="ph">phase iv</div><ul><li>UMBRA ⇄ Solana bridge: notes in, SPL out</li><li>useful puzzles: proving other programs as the block work</li><li>light clients that only check anchors and proofs</li></ul></div>
   </div>

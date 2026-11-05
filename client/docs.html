@@ -30,6 +30,9 @@ umbq1…  quantum: the same keys + an ML-KEM-768 public key (about 1,700 charact
 
 <h3 id="proof-of-proof">Proof of proof</h3>
 <p>UMBRA uses Nockchain's consensus idea: a block is won by proving a computation, not by grinding a hash. From the header and a nonce the miner derives two Goldilocks field elements (p = 2^64 − 2^32 + 1) and runs 1,023 rounds of <code>a' = (a+b)^7 + c_i, b' = a</code> with fixed round constants. All 1,024 states are Merkle-committed. The block is valid when <code>sha256("umbra/pow|" root | header | nonce) × difficulty &lt; 2^256</code> and the proof checks: the first state matches the seed, the last state is in the tree, and 32 steps drawn by Fiat–Shamir from the root open correctly, each with the step after it. Faking a fraction f of the trace survives with probability (1 − f)^32. Difficulty retargets every block toward 20 seconds. The reward is <code>(2^32 − mined) / 2^19</code> with a 2 UMBRA tail. Code: <code>client/pop.js</code>.</p>
+<h3 id="light-client">Light client: verify the chain yourself</h3>
+<p>Open <a class="ac" href="/verify">/verify</a> and press <b>verify the chain</b>. Your browser downloads the raw block headers and rebuilds every block hash from block 0, checking that each block points at the one before it. It re-runs the proof of proof on recent blocks against the headers it rebuilt, then reads every anchor memo straight from a Solana RPC and checks that Solana recorded the same hash. The node only supplies data; every check runs on your device. Code: <code>client/light.js</code>.</p>
+
 <h3 id="solana-anchors">Solana anchors</h3>
 <p>Every 100 blocks the node writes <code>umbra-1:&lt;height&gt;:&lt;block hash&gt;</code> to Solana with the Memo program, signed by the anchor key. The explorer links each anchored block to its Solscan transaction, and <code>/api/anchors</code> lists them all.</p>
 
@@ -40,7 +43,8 @@ umbq1…  quantum: the same keys + an ML-KEM-768 public key (about 1,700 charact
 <pre>GET  /api/work?address=A            block template paying the coinbase to A
 POST /api/work   {id, proof}         submit a proof (re-checked by the node)
 GET  /api/proof/:height             header, difficulty and proof of a recent block
-GET  /api/anchors                   Solana anchors (height, hash, signature)
+GET  /api/anchors?all               Solana anchors (height, hash, signature)
+GET  /api/headers?from=N&limit=1000 raw header fields for light clients
 GET  /api/stats                     chain height, difficulty, outputs, key images, emission
 GET  /api/blocks?limit=15&before=N  recent blocks
 GET  /api/block/:height|:hash       one block with its transactions

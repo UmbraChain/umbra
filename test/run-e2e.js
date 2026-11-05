@@ -4,4 +4,6 @@ const PORT = String(18000 + Math.floor(Math.random() * 1000)), DATA = path.join(
 const node = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT, BLOCK_SEC: '5', DATA_PATH: DATA }, stdio: ['ignore', 'pipe', 'inherit'] });
 const up = async () => { for (let i = 0; i < 60; i++) { try { const s = await (await fetch(`http://localhost:${PORT}/api/stats`)).json(); if (s.height >= 3) return; } catch {} await new Promise((r) => setTimeout(r, 1000)); } throw new Error('node did not start'); };
 try { await up(); const t = spawn(process.execPath, ['test/e2e.test.js'], { env: { ...process.env, API: `http://localhost:${PORT}` }, stdio: 'inherit' });
-  const code = await new Promise((r) => t.on('exit', r)); node.kill(); process.exit(code); } catch (e) { console.error(e.message); node.kill(); process.exit(1); }
+  let code = await new Promise((r) => t.on('exit', r));
+  if (!code) { const l = spawn(process.execPath, ['test/light.test.js'], { env: { ...process.env, API: `http://localhost:${PORT}` }, stdio: 'inherit' }); code = await new Promise((r) => l.on('exit', r)); }
+  node.kill(); process.exit(code); } catch (e) { console.error(e.message); node.kill(); process.exit(1); }

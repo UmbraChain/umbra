@@ -129,7 +129,7 @@ function search(q) { q = String(q || '').trim(); if (/^\d+$/.test(q) && S.blocks
 
 // ---------- http ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json', '.pdf': 'application/pdf' };
-const PAGES = { '/': 'index.html', '/explorer': 'explorer.html', '/wallet': 'wallet.html', '/docs': 'docs.html', '/whitepaper': 'whitepaper.html', '/mine': 'mine.html' };
+const PAGES = { '/': 'index.html', '/explorer': 'explorer.html', '/wallet': 'wallet.html', '/docs': 'docs.html', '/whitepaper': 'whitepaper.html', '/mine': 'mine.html', '/verify': 'verify.html' };
 const json = (res, code, o) => { res.writeHead(code, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify(o)); };
 const body = (req) => new Promise((ok) => { let d = ''; req.on('data', (c) => { d += c; if (d.length > 3e6) req.destroy(); }); req.on('end', () => { try { ok(JSON.parse(d || '{}')); } catch { ok({}); } }); });
 const hits = new Map(); const limited = (ip, key, per) => { const k = ip + key, t = hits.get(k) || 0; if (now() - t < per) return true; hits.set(k, now()); return false; };
@@ -162,7 +162,10 @@ http.createServer(async (req, res) => {
     if (p === '/api/work' && req.method === 'POST') { const d = await body(req); if (now() - (hits.get(ip + 'wf') || 0) < 500) return json(res, 200, { error: 'slow down after a bad share' });   // only failed shares are throttled
       try { return json(res, 200, { ok: true, height: await submitWork(d.id, d.proof) }); } catch (e) { const m = String(e.message || e); if (/rejected|bad proof/.test(m)) hits.set(ip + 'wf', now()); return json(res, 200, { error: m }); } }
     if (p.startsWith('/api/proof/')) { const b = S.blocks[+p.slice(11)]; if (!b) return json(res, 404, { error: 'no such block' }); return json(res, 200, { height: b.height, hdr: header(b), diff: b.diff, proof: b.proof || null }); }
-    if (p === '/api/anchors') return json(res, 200, { ...anchor.info(), list: Object.entries(S.anchors || {}).map(([h, a]) => ({ height: +h, ...a })).reverse().slice(0, 50) });
+    if (p === '/api/anchors') return json(res, 200, { ...anchor.info(), list: Object.entries(S.anchors || {}).map(([h, a]) => ({ height: +h, ...a })).reverse().slice(0, u.searchParams.has('all') ? 1e6 : 50) });
+    // light-client sync: the raw header fields of every block, so a client can rebuild each hash and the prev-hash chain itself
+    if (p === '/api/headers') { const from = Math.max(0, +u.searchParams.get('from') || 0), lim = Math.min(2000, +u.searchParams.get('limit') || 1000);
+      return json(res, 200, { height: height(), headers: S.blocks.slice(from, from + lim).map((b) => [b.height, b.prev, b.ts, b.diff, b.root, b.minerTx, b.traceRoot || null, b.nonce, b.hash, !!b.proof]) }); }
     if (p === '/api/leaderboard') { const b = board(), a = u.searchParams.get('address'); if (a) { try { K.parseAddress(a); const id = minerId(a), all = Object.entries(S.board || {}).sort((x, y) => y[1].blocks - x[1].blocks || x[1].first - y[1].first), k = all.findIndex(([i]) => i === id); b.you = { id, rank: k >= 0 ? k + 1 : null, ...(S.board?.[id] || { blocks: 0 }) }; } catch {} } return json(res, 200, b); }
     if (p === '/api/miners') return json(res, 200, W.map((w, k) => ({ name: NAMES[k], address: w.address, outputs: owned[k].length })));
     // static

@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UMBRA Light Client</title><meta name="description" content="Verify UMBRA from genesis in your browser: rebuild every block hash, re-check recent proofs of proof, and match every Solana anchor read straight from Solana."><link rel="icon" href="/favicon.svg"><meta property="og:image" content="/og.png">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css">
+<script type="importmap">{"imports":{
+  "@noble/curves/ed25519":"/vendor/curves/esm/ed25519.js",
+  "@noble/hashes/_assert":"/vendor/hashes/esm/_assert.js","@noble/hashes/hmac":"/vendor/hashes/esm/hmac.js","@noble/hashes/sha2":"/vendor/hashes/esm/sha2.js",
+  "@noble/hashes/sha3":"/vendor/hashes/esm/sha3.js","@noble/hashes/sha512":"/vendor/hashes/esm/sha512.js","@noble/hashes/utils":"/vendor/hashes/esm/utils.js",
+  "@noble/hashes/crypto":"/vendor/hashes/esm/crypto.js","@noble/hashes/sha256":"/vendor/hashes/esm/sha256.js","@noble/hashes/blake2s":"/vendor/hashes/esm/blake2s.js",
+  "@noble/post-quantum/ml-kem":"/vendor/post-quantum/esm/ml-kem.js"}}</script>
+<style>
+.lead{color:var(--fog);max-width:760px;font-size:15px;line-height:1.75;margin-top:4px}.lead b{color:var(--ice);font-weight:400}
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+.st{padding:22px;min-height:250px;display:flex;flex-direction:column}.st .n{font:400 11px var(--mono);letter-spacing:.16em;color:var(--hi);text-transform:uppercase}.st h4{font:500 20px/1.25 var(--display);margin:14px 0 8px}.st p{color:var(--fog);font-size:13px;line-height:1.6}
+.st .big{font:500 38px var(--display);margin-top:auto;padding-top:18px;letter-spacing:-.02em}.st .big small{font:400 13px var(--mono);color:var(--fog);letter-spacing:0}
+.bar{height:4px;background:var(--slate);margin-top:12px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--hi);transition:width .15s}
+.st.done .big{color:var(--hi)}.st.bad .big{color:var(--bad)}.st.done{border-color:rgba(169,112,255,.55)}
+#verdict{margin-top:22px;padding:22px 26px;font:500 22px var(--display);display:none;align-items:center;gap:18px}#verdict.show{display:flex}#verdict .dot{width:14px;height:14px;border-radius:50%;background:var(--hi);box-shadow:0 0 18px var(--hi)}#verdict.bad .dot{background:var(--bad);box-shadow:0 0 18px var(--bad)}
+#verdict small{display:block;font:400 12px var(--mono);color:var(--fog);margin-top:6px;letter-spacing:.02em}
+.log{max-height:340px;overflow:auto}.log div{display:grid;grid-template-columns:90px 1fr auto;gap:14px;padding:9px 18px;border-bottom:1px solid var(--line);font:400 12px var(--mono);align-items:center}.log .ok{color:var(--hi)}.log .x{color:var(--bad)}.log a{color:var(--hi)}
+.opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:22px}.opts label{margin:0}.opts input{width:auto}
+@media(max-width:900px){.stages{grid-template-columns:1fr}.log div{grid-template-columns:70px 1fr}.log div>:last-child{display:none}}
+</style></head><body>
+<main class="wrap app"><div class="pagehead"><h1>Verify UMBRA</h1><span class="cap">light client · runs in your browser</span></div>
+  <p class="lead">Don't trust this website. This page downloads the raw block headers and <b>rebuilds every block hash from block 0</b> on your machine, re-runs the <b>proof of proof</b> on recent blocks, then fetches every anchor <b>straight from Solana</b> and checks that Solana recorded the same hash your browser computed. If the node lied about any block, one of the three stops red.</p>
+  <div class="opts"><button class="btn solid" id="go">verify the chain</button><label class="cap" for="np">recent proofs to check</label><input id="np" type="number" min="1" max="500" value="64" style="width:90px"><label class="cap" for="rpc">solana rpc</label><input id="rpc" value="https://solana-rpc.publicnode.com" style="width:320px"></div>
+  <div class="stages">
+    <div class="st frame" id="s1"><span class="n">01 · headers</span><h4>Rebuild every block hash</h4><p>Each hash is recomputed from the block's own fields (height, previous hash, time, difficulty, roots, nonce), and each block must point at the one before it, back to genesis.</p><div class="bar"><i id="b1"></i></div><div class="big" id="v1">–</div></div>
+    <div class="st frame" id="s2"><span class="n">02 · proofs</span><h4>Re-run proof of proof</h4><p>For recent blocks: re-derive the seed and the 32 Fiat–Shamir challenges, re-check every opened step over Goldilocks, and check the commitment beats the difficulty.</p><div class="bar"><i id="b2"></i></div><div class="big" id="v2">–</div></div>
+    <div class="st frame" id="s3"><span class="n">03 · solana</span><h4>Match every Solana anchor</h4><p>Each anchor's memo is read from a Solana RPC (not from this node) and its hash must equal the one your browser rebuilt for that height.</p><div class="bar"><i id="b3"></i></div><div class="big" id="v3">–</div></div>
+  </div>
+  <div class="frame" id="verdict"><span class="dot"></span><div><span id="vt"></span><small id="vs"></small></div></div>
+  <div class="panel" style="margin-top:18px"><div class="hd"><span>log</span><span id="lt">idle</span></div><div class="log" id="log"><div><span class="dim">ready</span><span class="dim">press verify the chain</span><span></span></div></div></div>
+  <p class="note">Code: <code>client/light.js</code>, <code>client/pop.js</code>, <code>client/rct.js</code> on <a class="ac" href="https://github.com/UmbraChain/umbra" target="_blank" rel="noopener">GitHub</a>. The page uses only <code>/api/headers</code>, <code>/api/proof/:height</code> and <code>/api/anchors?all</code> from the node; everything is checked locally.</p>
+</main>
+<script type="module">
+import { chrome, $, api, short } from '/common.js'; import * as L from '/light.js'; chrome();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), fmt = (n) => n.toLocaleString('en-US');
+const log = (h, msg, right, cls) => { const l = $('log'); if (l.dataset.fresh !== '1') { l.innerHTML = ''; l.dataset.fresh = '1'; } const d = document.createElement('div'); d.innerHTML = `<span class="${cls || 'dim'}">${h}</span><span>${msg}</span><span class="dim">${right || ''}</span>`; l.prepend(d); while (l.children.length > 200) l.lastChild.remove(); };
+const stage = (k, cls, big) => { $('s' + k).className = 'st frame ' + (cls || ''); if (big != null) $('v' + k).innerHTML = big; };
+const fail = (k, why) => { stage(k, 'bad'); $('verdict').className = 'frame show bad'; $('vt').textContent = 'Verification failed'; $('vs').textContent = why; $('go').disabled = false; $('lt').textContent = 'stopped'; };
+$('go').onclick = async () => {
+  $('go').disabled = true; $('verdict').className = 'frame'; [1, 2, 3].forEach((k) => { stage(k, '', '–'); $('b' + k).style.width = '0'; }); $('log').dataset.fresh = '0'; $('lt').textContent = 'running';
+  const t0 = performance.now();
+  // 1 · headers
+  let prev = L.GENESIS_PREV, next = 0, hashes = new Map(), H = new Map(), tip = 0;
+  for (;;) { const r = await api('/api/headers?from=' + next + '&limit=1000'); tip = r.height; const list = r.headers.map(L.unpack); if (!list.length) break;
+    const c = L.checkHeaders(list, prev, next, hashes); if (!c.ok) { log('#' + c.at, c.why, '', 'x'); return fail(1, 'block ' + c.at + ': ' + c.why); }
+    list.forEach((h) => H.set(h.height, h)); prev = c.tip; next = c.next; $('b1').style.width = (next / (tip + 1) * 100) + '%'; $('v1').innerHTML = fmt(next) + ' <small>blocks</small>';
+    log('#' + list[0].height + '–' + list[list.length - 1].height, 'hashes rebuilt, chain links intact', short(c.tip, 8), 'ok'); await sleep(30); if (next > tip) break; }
+  stage(1, 'done', fmt(next) + ' <small>blocks · genesis → tip</small>');
+  // 2 · proofs (newest first)
+  const want = Math.max(1, Math.min(500, +$('np').value || 64)); let n = 0, ms = 0;
+  for (let h = tip; h >= 0 && n < want; h--) { const hd = H.get(h); if (!hd.hasProof) continue; const p = await api('/api/proof/' + h), a = performance.now(), err = L.checkProof(hd, p.proof); ms += performance.now() - a;
+    if (err) { log('#' + h, 'proof rejected: ' + err, '', 'x'); return fail(2, 'block ' + h + ': ' + err); }
+    n++; $('b2').style.width = (n / want * 100) + '%'; $('v2').innerHTML = fmt(n) + ' <small>proofs · ' + (ms / n).toFixed(1) + ' ms each</small>'; if (n % 4 === 0 || n < 4) log('#' + h, 'proof of proof valid · 32 steps over Goldilocks', (performance.now() - a).toFixed(1) + ' ms', 'ok'); }
+  stage(2, 'done', fmt(n) + ' <small>proofs · ' + (ms / Math.max(1, n)).toFixed(1) + ' ms each</small>');
+  // 3 · anchors, read from Solana
+  const A = (await api('/api/anchors?all')).list.slice().reverse(); let m = 0; const rpc = $('rpc').value.trim();
+  if (!A.length) { stage(3, 'done', '0 <small>anchors yet</small>'); log('solana', 'no anchors written yet', '', 'dim'); }
+  for (const a of A) { let tx; for (let tries = 0; tries < 4; tries++) { try { tx = await L.solanaTx(rpc, a.sig); break; } catch (e) { await sleep(900 * (tries + 1)); } }
+    if (!tx) { log('#' + a.height, 'Solana RPC did not answer for this anchor', '', 'x'); return fail(3, 'could not read anchor ' + a.height + ' from Solana (try another RPC)'); }
+    const c = L.checkAnchor(L.memoOf(tx), hashes); if (!c.ok) { log('#' + a.height, c.why, '', 'x'); return fail(3, 'anchor at block ' + a.height + ': ' + c.why); }
+    m++; $('b3').style.width = (m / A.length * 100) + '%'; $('v3').innerHTML = fmt(m) + ' <small>/ ' + A.length + ' anchors</small>';
+    log('#' + a.height, 'Solana memo matches your rebuilt hash', `<a href="https://solscan.io/tx/${a.sig}" target="_blank" rel="noopener">${short(a.sig, 6)} ↗</a>`, 'ok'); await sleep(250); }
+  if (A.length) stage(3, 'done', fmt(m) + ' <small>/ ' + A.length + ' anchors match</small>');
+  $('verdict').className = 'frame show'; $('vt').textContent = 'Verified: UMBRA checks out from genesis to block ' + fmt(tip) + '.';
+  $('vs').textContent = `${fmt(next)} headers rebuilt · ${n} proofs re-run · ${m} Solana anchors matched · ${((performance.now() - t0) / 1000).toFixed(1)}s, all on this device`; $('lt').textContent = 'done'; $('go').disabled = false;
+};
+</script></body></html>
