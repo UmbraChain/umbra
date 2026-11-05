@@ -55,3 +55,4 @@ footer.foot{border-top:1px solid var(--line);padding:26px 0 34px}footer.foot .wr
 
 body{background:radial-gradient(1200px 600px at 80% -10%,rgba(169,112,255,.10),transparent 60%),var(--void)}
 .panel,.tbl,.stats div{border-radius:0}.tag{border-radius:999px}
+.grid2>*{min-width:0}.addr code{min-width:0}
